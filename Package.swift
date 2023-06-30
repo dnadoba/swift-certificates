@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.9
 //===----------------------------------------------------------------------===//
 //
 // This source file is part of the SwiftCertificates open source project
@@ -40,7 +40,11 @@ let package = Package(
             ],
             exclude: [
                 "CMakeLists.txt",
-            ]),
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("VariadicGenerics"),
+            ]
+        ),
         .testTarget(
             name: "X509Tests",
             dependencies: [
