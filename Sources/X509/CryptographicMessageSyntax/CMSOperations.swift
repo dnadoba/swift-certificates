@@ -85,6 +85,7 @@ public enum CMS {
 
     @_spi(CMS)
     @inlinable
+    
     public static func isValidSignature<
         DataBytes: DataProtocol,
         SignatureBytes: DataProtocol

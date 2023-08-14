@@ -27,10 +27,12 @@ import SwiftASN1
 ///     OCSPVerifierPolicy(failureMode: .soft, requester: requester, validationTime: now)
 /// }
 /// ```
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 @resultBuilder
 public struct PolicyBuilder {}
 
 
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 extension PolicyBuilder {
     @inlinable
     public static func buildLimitedAvailability<Policy: VerifierPolicy>(_ component: Policy) -> Policy {
@@ -39,6 +41,7 @@ extension PolicyBuilder {
 }
 
 // MARK: empty policy
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 extension PolicyBuilder {
     @usableFromInline
     struct Empty: VerifierPolicy {
@@ -61,52 +64,31 @@ extension PolicyBuilder {
 }
 
 // MARK: concatenated policies
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 extension PolicyBuilder {
-    @usableFromInline
-    struct Tuple2<First: VerifierPolicy, Second: VerifierPolicy>: VerifierPolicy {
-        @usableFromInline
-        var first: First
-        
-        @usableFromInline
-        var second: Second
-        
-        @inlinable
-        init(first: First, second: Second) {
-            self.first = first
-            self.second = second
-        }
-        
-        @inlinable
-        var verifyingCriticalExtensions: [SwiftASN1.ASN1ObjectIdentifier] {
-            first.verifyingCriticalExtensions + second.verifyingCriticalExtensions
-        }
-        
-        @inlinable
-        mutating func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) async -> PolicyEvaluationResult {
-            switch await first.chainMeetsPolicyRequirements(chain: chain) {
-            case .meetsPolicy:
-                break
-            case .failsToMeetPolicy(let reason):
-                return .failsToMeetPolicy(reason: reason)
-            }
-            
-            return await second.chainMeetsPolicyRequirements(chain: chain)
-        }
+    
+    @inlinable
+    public static func buildPartialBlock<Policy: VerifierPolicy>(first: Policy) -> PolicySet<Policy> {
+        PolicySet(first)
     }
     
     @inlinable
-    public static func buildPartialBlock<Policy: VerifierPolicy>(first: Policy) -> Policy {
-        first
+    public static func buildPartialBlock<each Policy: VerifierPolicy, NextPolicy: VerifierPolicy>(
+        accumulated: PolicySet<repeat each Policy>,
+        next: NextPolicy
+    ) -> (PolicySet<repeat each Policy, NextPolicy>) {
+        PolicySet((repeat each accumulated.policy, next))
     }
-    
-    @inlinable
-    public static func buildPartialBlock(accumulated: some VerifierPolicy, next: some VerifierPolicy) -> some VerifierPolicy {
-        Tuple2(first: accumulated, second: next)
-    }
+//    public static func buildBlock<each Policy: VerifierPolicy>(
+//        _ components: (repeat each Policy)
+//    ) -> PolicySet<repeat each Policy> {
+//        PolicySet(components)
+//    }
 }
 
 
 // MARK: if
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 extension PolicyBuilder {
     @usableFromInline
     struct WrappedOptional<Wrapped>: VerifierPolicy where Wrapped: VerifierPolicy {
@@ -136,6 +118,7 @@ extension PolicyBuilder {
 }
 
 // MARK: if/else and switch
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 extension PolicyBuilder {
     /// implementation detail of ``PolicyBuilder`` which should not be used outside the implementation of ``PolicyBuilder``.
     public struct _Either<First: VerifierPolicy, Second: VerifierPolicy>: VerifierPolicy {
@@ -185,6 +168,7 @@ extension PolicyBuilder {
     }
 }
 
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 extension PolicyBuilder {
     @usableFromInline
     struct CachedVerifyingCriticalExtensions<Wrapped: VerifierPolicy>: VerifierPolicy {

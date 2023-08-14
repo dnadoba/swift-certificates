@@ -14,16 +14,21 @@
 
 import SwiftASN1
 
-@available(macOS 14.0.0, *)
-public struct PolicySet<each Policy: VerifierPolicy> {
+@available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
+public struct PolicySet<each Policy: VerifierPolicy>: VerifierPolicy {
     @usableFromInline
     var policy: (repeat each Policy)
     
     @usableFromInline
-    var verifyingCriticalExtensions: [ASN1ObjectIdentifier]
+    var _verifyingCriticalExtensions: [ASN1ObjectIdentifier]
     
     @inlinable
-    init(policy: (repeat each Policy)) {
+    public var verifyingCriticalExtensions: [ASN1ObjectIdentifier] {
+        _verifyingCriticalExtensions
+    }
+    
+    @inlinable
+    public init(_ policy: (repeat each Policy)) {
         self.policy = policy
 
         var extensions: [ASN1ObjectIdentifier] = []
@@ -33,30 +38,29 @@ public struct PolicySet<each Policy: VerifierPolicy> {
 
         repeat extensions.append(contentsOf: (each policy).verifyingCriticalExtensions)
         
-        self.verifyingCriticalExtensions = extensions
+        self._verifyingCriticalExtensions = extensions
     }
     
     @inlinable
-    mutating func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) async -> PolicyEvaluationResult {
+    public mutating func chainMeetsPolicyRequirements(chain: UnverifiedCertificateChain) async -> PolicyEvaluationResult {
+        // variadic generic currently cannot call mutating methods.
+        // This is a workaround according to https://forums.swift.org/t/is-there-a-way-to-implement-zipsequence-iterator-s-next-method-from-se-0398/66680/2
+        func chainMeetsPolicyRequirementsOrThrow<SpecificPolicy: VerifierPolicy>(
+            policy: SpecificPolicy
+        ) async throws -> SpecificPolicy {
+            var policy = policy
+            try await policy.chainMeetsPolicyRequirementsOrThrow(chain: chain)
+            return policy
+        }
+        
         do {
-            repeat try await (each policy).chainMeetsPolicyRequirementsOrThrow(chain: chain)
+            var policy: (repeat each Policy) = self.policy
+            policy = try await (repeat chainMeetsPolicyRequirementsOrThrow(policy: each policy))
+            self.policy = policy
             return .meetsPolicy
         } catch {
             return .failsToMeetPolicy(reason: (error as! VerifierError).reason)
         }
-    }
-}
-
-protocol BarProtocol {
-    mutating func mutate()
-}
-
-@available(macOS 14.0.0, *)
-struct Foo<each Bar: BarProtocol> {
-    var bar: (repeat each Bar)
-    
-    mutating func mutate() {
-        repeat (each bar).mutate()
     }
 }
 
