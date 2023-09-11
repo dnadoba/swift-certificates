@@ -1,5 +1,5 @@
 {
-  "mallocCountTotal" : 16,
+  "mallocCountTotal" : 32,
   "releaseCount" : 2,
   "retainCount" : 1,
   "retainReleaseDelta" : 1

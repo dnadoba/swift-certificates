@@ -24,7 +24,8 @@ let package = Package(
         .package(path: "../"),
         .package(url: "https://github.com/ordo-one/package-benchmark", from: "1.9.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.5.0"),
-        .package(url: "https://github.com/apple/swift-asn1.git", from: "1.0.0-beta.1"),
+        //.package(url: "https://github.com/apple/swift-asn1.git", from: "1.0.0-beta.1"),
+        .package(path: "../../swift-asn1"),
     ],
     targets: [
         .executableTarget(
@@ -45,20 +46,19 @@ let package = Package(
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
                 .product(name: "Crypto", package: "swift-crypto"),
+            ],
+            resources: [
+                .copy("ca-certificates/"),
             ]
         ),
         .target(
-            name: "BlackHole",
-            dependencies: [
-                .product(name: "X509", package: "swift-certificates"),
-                .product(name: "SwiftASN1", package: "swift-asn1"),
-                .product(name: "Crypto", package: "swift-crypto"),
-            ]
+            name: "BlackHole"
         ),
         .testTarget(
             name: "BenchmarksTests",
             dependencies: [
                 "Benchmarks",
+                "BlackHole",
             ]
         )
     ]
