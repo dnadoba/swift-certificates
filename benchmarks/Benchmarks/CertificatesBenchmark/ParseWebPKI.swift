@@ -12,10 +12,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-import BlackHole
-import X509
+import Benchmark
+@_spi(Testing) import X509
 import SwiftASN1
 import Foundation
+
+public func parseWebPKIFromDiskToCertificateStore() {
+    blackHole(try! CertificateStore.loadTrustRoot(at: [webPKICertificatesFilePath]))
+}
 
 public func parseWebPKIFromMultiPEMStringToPEMDocument() throws -> () -> Void {
     let caPEMs = try loadWebPKIAsSingleMuliPEMString()
@@ -23,22 +27,6 @@ public func parseWebPKIFromMultiPEMStringToPEMDocument() throws -> () -> Void {
         blackHole(try! PEMDocument.parseMultiple(pemString: caPEMs))
     }
 }
-
-//public func parseWebPKIFromMultiPEMStringToPEMDocument() throws -> () -> Void {
-//    let caPEMs = try loadWebPKIAsSingleMuliPEMString()
-//    return {
-//        blackHole(try! PEMDocument.multipleConcurrent(pemString: caPEMs, transform: { _ in }))
-//    }
-//}
-
-//public func parseWebPKIFromMultiPEMStringToCertificate() throws -> () -> Void {
-//    let caPEMs = try loadWebPKIAsSingleMuliPEMString()
-//    return {
-//        blackHole(try! PEMDocument.multipleConcurrent(pemString: caPEMs, transform: {
-//            Certificate.init
-//        }))
-//    }
-//}
 
 public func parseWebPKIFromPEMStringToPEMDocument() throws -> () -> Void {
     let caPEMs = try loadWebPKIAsPemStrings()
@@ -104,7 +92,12 @@ extension Array where Element: Sendable {
             DispatchQueue.concurrentPerform(iterations: self.count) { index in
                 let element = self[index]
                 let result = Result { try transform(element) }
+                
+                #if swift(>=5.8)
                 resultBuffer.initializeElement(at: index, to: result)
+                #else
+                resultBuffer.baseAddress?.advanced(by: index).initialize(to: result)
+                #endif
             }
             initializedCount = self.count
         }

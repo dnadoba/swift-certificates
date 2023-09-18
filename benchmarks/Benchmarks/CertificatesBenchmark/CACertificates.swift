@@ -14,11 +14,17 @@
 
 import Foundation
 
-func loadWebPKIAsSingleMuliPEMString() throws -> String {
+let webPKICertificatesURL = {
     guard let certURL = Bundle.module.url(forResource: "ca-certificates", withExtension: "crt", subdirectory: "ca-certificates") else {
         fatalError("could not get url in bundle for ca-certificates.crt")
     }
-    return try String(decoding: Data(contentsOf: certURL), as: UTF8.self)
+    return certURL
+}()
+
+let webPKICertificatesFilePath = webPKICertificatesURL.path
+
+func loadWebPKIAsSingleMuliPEMString() throws -> String {
+    try String(decoding: Data(contentsOf: webPKICertificatesURL), as: UTF8.self)
 }
 
 func loadWebPKIAsPemStrings() throws -> [String] {

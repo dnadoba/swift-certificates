@@ -13,65 +13,86 @@
 //===----------------------------------------------------------------------===//
 
 import Benchmark
-import Benchmarks
 import Foundation
 
 let benchmarks = {
     Benchmark.defaultConfiguration = .init(
-        metrics: [.mallocCountTotal, .syscalls] + .arc,
-        warmupIterations: 1
+        metrics: [
+//            .mallocCountTotal,
+//            .syscalls,
+//            .readSyscalls,
+//            .writeSyscalls,
+//            .memoryLeaked,
+//            .retainCount,
+//            .releaseCount,
+            .wallClock,
+        ]
     )
     
-    let runParseWebPKIFromMultiPEMStringToPEMDocument = try! parseWebPKIFromMultiPEMStringToPEMDocument()
-    Benchmark("Parse WebPKI Roots from multi PEM to PEMDocument ", configuration: .init(metrics: [.mallocCountTotal, .throughput, .wallClock])) { benchmark in
-        for _ in 0..<100 {
-            runParseWebPKIFromMultiPEMStringToPEMDocument()
-        }
+    var configWithoutRetainRelease = Benchmark.defaultConfiguration
+    configWithoutRetainRelease.metrics.removeAll(where: { $0 == .retainCount || $0 == .releaseCount })
+    
+    Benchmark("Parse WebPKI from disk to CertificateStore") { _ in
+        parseWebPKIFromDiskToCertificateStore()
     }
     
-    let runParseWebPKIFromPEMStringToPEMDocument = try! parseWebPKIFromPEMStringToPEMDocument()
-    Benchmark("Parse WebPKI Roots from PEM to PEMDocument ", configuration: .init(metrics: [.mallocCountTotal, .throughput, .wallClock])) { benchmark in
+    Benchmark("Parse WebPKI Roots from multi PEM to PEMDocument ") { benchmark, run in
         for _ in 0..<100 {
-            runParseWebPKIFromPEMStringToPEMDocument()
+            run()
         }
+    } setup: {
+        try! parseWebPKIFromMultiPEMStringToPEMDocument()
+    }
+    
+    Benchmark("Parse WebPKI Roots from PEM to PEMDocument") { benchmark, run in
+        for _ in 0..<100 {
+            run()
+        }
+    } setup: {
+        try! parseWebPKIFromPEMStringToPEMDocument()
     }
 
-    let runParseWebPKIRootsFromPEM = try! parseWebPKIRootsFromPEM()
-    Benchmark("Parse WebPKI Roots from PEM to Certificate", configuration: .init(metrics: [.mallocCountTotal, .throughput, .wallClock])) { benchmark in
+    Benchmark("Parse WebPKI Roots from PEM to Certificate") { benchmark, run in
         for _ in 0..<100 {
-            runParseWebPKIRootsFromPEM()
+            run()
         }
+    } setup: {
+        try! parseWebPKIRootsFromPEM()
     }
     
-    let runParseWebPKIRootsFromDER = try! parseWebPKIRootsFromDER()
-    Benchmark("Parse WebPKI Roots from DER to Certificate", configuration: .init(metrics: [.mallocCountTotal, .throughput, .wallClock])) { benchmark in
+    Benchmark("Parse WebPKI Roots from DER to Certificate") { benchmark, run in
         for _ in 0..<100 {
-            runParseWebPKIRootsFromDER()
+            run()
         }
+    } setup: {
+        try! parseWebPKIRootsFromDER()
     }
     
-    let runParseWebPKIFromPEMStringToPEMDocumentConcurrent = try! parseWebPKIFromPEMStringToPEMDocumentConcurrent()
-    Benchmark("Parse WebPKI Roots from PEM to PEMDocument concurrently", configuration: .init(metrics: [.mallocCountTotal, .throughput, .wallClock])) { benchmark in
+    Benchmark("Parse WebPKI Roots from PEM to PEMDocument concurrently") { benchmark, run in
         for _ in 0..<100 {
-            runParseWebPKIFromPEMStringToPEMDocumentConcurrent()
+            run()
         }
+    } setup: {
+        try! parseWebPKIFromPEMStringToPEMDocumentConcurrent()
     }
     
-    let runParseWebPKIRootsFromPEMConcurrent = try! parseWebPKIRootsFromPEMConcurrent()
-    Benchmark("Parse WebPKI Roots from PEM to Certificate concurrently", configuration: .init(metrics: [.mallocCountTotal, .throughput, .wallClock])) { benchmark in
+    Benchmark("Parse WebPKI Roots from PEM to Certificate concurrently") { benchmark, run in
         for _ in 0..<100 {
-            runParseWebPKIRootsFromPEMConcurrent()
+            run()
         }
+    } setup: {
+        try! parseWebPKIRootsFromPEMConcurrent()
     }
     
-    let runParseWebPKIRootsFromDERConcurrent = try! parseWebPKIRootsFromDERConcurrent()
-    Benchmark("Parse WebPKI Roots from DER to Certificate concurrently", configuration: .init(metrics: [.mallocCountTotal, .throughput, .wallClock])) { benchmark in
+    Benchmark("Parse WebPKI Roots from DER to Certificate concurrently") { benchmark, run in
         for _ in 0..<100 {
-            runParseWebPKIRootsFromDERConcurrent()
+            run()
         }
+    } setup: {
+        try! parseWebPKIRootsFromDERConcurrent()
     }
     
-    Benchmark("Verifier", configuration: .init(metrics: [.mallocCountTotal, .syscalls])) { benchmark in
+    Benchmark("Verifier", configuration: configWithoutRetainRelease) { benchmark in
         for _ in benchmark.scaledIterations {
             await verifier()
         }
