@@ -51,6 +51,16 @@ extension CertificateStore {
     }
 }
 
+extension DispatchQueue {
+    func asyncFuture<Success: Sendable>(withResultOf work: @Sendable @escaping () throws -> Success) -> Future<Success, any Error> {
+        let promise = Promise<Success, any Error>()
+        self.async {
+            promise.fulfil(with: Result { try work() })
+        }
+        return Future(promise)
+    }
+}
+
 #if os(Linux)
 /// This is a list of root CA file search paths. This list contains paths as validated against several distributions.
 /// If you are attempting to use swift-certificates on a platform that is not covered here and certificate validation is
@@ -61,6 +71,9 @@ private let rootCAFileSearchPaths = [
 ]
 
 extension CertificateStore {
+    static let cachedTrustRootsFuture: Future<CertificateStore, any Error> = DispatchQueue.global(qos: .userInteractive).asyncFuture {
+        try Self.loadTrustRoot(at: rootCAFileSearchPaths)
+    }
     static let cachedTrustRoot: Result<CertificateStore, any Error> = Result {
         try Self.loadTrustRoot(at: rootCAFileSearchPaths)
     }

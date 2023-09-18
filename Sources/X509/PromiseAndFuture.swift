@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+// MARK: - Promise
 final class Promise<Value, Failure: Error> {
     private enum State {
         case unfulfilled(observers: [CheckedContinuation<Result<Value, Failure>, Never>])
@@ -54,7 +55,18 @@ final class Promise<Value, Failure: Error> {
             }
         }
     }
+    
+    deinit {
+        switch self.state.unlockedValue {
+        case .fulfilled:
+            break
+        case .unfulfilled:
+            fatalError("unfulfilled Promise leaked")
+        }
+    }
 }
+
+extension Promise: Sendable where Value: Sendable {}
 
 extension Promise {
     func succeed(with value: Value) {
@@ -66,11 +78,14 @@ extension Promise {
     }
 }
 
-extension Promise: Sendable where Value: Sendable {}
-
+// MARK: - Future
 
 struct Future<Value, Failure: Error> {
     private let promise: Promise<Value, Failure>
+    
+    init(_ promise: Promise<Value, Failure>) {
+        self.promise = promise
+    }
     
     var result: Result<Value, Failure> {
         get async {
@@ -105,3 +120,6 @@ extension Result where Failure == Never {
         }
     }
 }
+
+
+
