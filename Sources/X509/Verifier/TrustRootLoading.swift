@@ -71,18 +71,14 @@ private let rootCAFileSearchPaths = [
 ]
 
 extension CertificateStore {
-    static let cachedTrustRootsFuture: Future<CertificateStore, any Error> = DispatchQueue.global(qos: .userInteractive).asyncFuture {
-        try Self.loadTrustRoot(at: rootCAFileSearchPaths)
-    }
-    static let cachedTrustRoot: Result<CertificateStore, any Error> = Result {
+    static let cachedSystemTrustRootsFuture: Future<CertificateStore, any Error> = DispatchQueue.global(qos: .userInteractive).asyncFuture {
         try Self.loadTrustRoot(at: rootCAFileSearchPaths)
     }
     
-    public static var trustRoot: CertificateStore {
-        get throws {
-            try cachedTrustRoot.get()
-        }
-    }
-    
+    public static let systemTrustRoots: CertificateStore = {
+        // access `cachedTrustRootsFuture` to kick off loading on a background thread
+        _ = cachedSystemTrustRootsFuture
+        return CertificateStore(elements: CollectionOfOne(.trustRoots))
+    }()
 }
 #endif

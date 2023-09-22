@@ -76,8 +76,7 @@ let package = Package(
 if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
     package.dependencies += [
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.5.0"),
-        .package(url: "https://github.com/apple/swift-asn1.git", branch: "dn-multi-pem"),
-        //.package(path: "../swift-asn1"),
+        .package(url: "https://github.com/apple/swift-asn1.git", from: "1.0.0-beta.2"),
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
     ]
 } else {

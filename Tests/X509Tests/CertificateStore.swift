@@ -14,13 +14,15 @@
 
 import XCTest
 import SwiftASN1
-@testable import X509
+@_spi(Testing) @testable import X509
 
 final class CertificateStoreTests: XCTestCase {
     #if os(Linux)
-    func testLoadingDefaultTrustRootsOnLinux() throws {
-        let store = try CertificateStore.trustRoot
+    func testLoadingDefaultTrustRootsOnLinux() async throws {
+        let log = DiagnosticsLog()
+        let store = await CertificateStore.systemTrustRoots.resolve(diagnosticsCallback: log.append(_:))
         XCTAssertGreaterThanOrEqual(store.totalCertificateCount, 100, "expected to find at least 100 certificates")
+        XCTAssertEqual(log, [])
     }
     #endif
     
@@ -37,19 +39,21 @@ final class CertificateStoreTests: XCTestCase {
         }
     }
     
-    func testLoadingFailsGracefullyIfFirstFileDoesNotExist() throws {
+    func testLoadingFailsGracefullyIfFirstFileDoesNotExist() async throws {
         let caCertificatesURL = try XCTUnwrap(Bundle.module.url(forResource: "ca-certificates", withExtension: "crt"))
         let searchPaths = [
             "/some/path/that/does/not/exist/1",
             caCertificatesURL.path,
         ]
-        let store = try CertificateStore.loadTrustRoot(at: searchPaths)
-        XCTAssertEqual(store.totalCertificateCount, 137)
+        let log = DiagnosticsLog()
+        let store = try await CertificateStore.loadTrustRoot(at: searchPaths).resolve(diagnosticsCallback: log.append(_:))
+        XCTAssertEqual(log, [])
+        XCTAssertEqual(store.totalCertificateCount, 136)
     }
 }
 
-extension CertificateStore {
+extension CertificateStore.Resolved {
     var totalCertificateCount: Int {
-        self._certificates.values.lazy.map(\.count).reduce(0, +)
+        self._certificates.lazy.map(\.count).reduce(0, +)
     }
 }
