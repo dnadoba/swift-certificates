@@ -66,24 +66,12 @@ extension PolicyBuilder {
 // MARK: concatenated policies
 @available(macOS 14, iOS 17, tvOS 17, watchOS 10, *)
 extension PolicyBuilder {
-    
     @inlinable
-    public static func buildPartialBlock<Policy: VerifierPolicy>(first: Policy) -> PolicySet<Policy> {
-        PolicySet(first)
+    public static func buildBlock<each Policy: VerifierPolicy>(
+        _ components: repeat each Policy
+    ) -> PolicySet<repeat each Policy> {
+        PolicySet(repeat each components)
     }
-    
-    @inlinable
-    public static func buildPartialBlock<each Policy: VerifierPolicy, NextPolicy: VerifierPolicy>(
-        accumulated: PolicySet<repeat each Policy>,
-        next: NextPolicy
-    ) -> (PolicySet<repeat each Policy, NextPolicy>) {
-        PolicySet((repeat each accumulated.policy, next))
-    }
-//    public static func buildBlock<each Policy: VerifierPolicy>(
-//        _ components: (repeat each Policy)
-//    ) -> PolicySet<repeat each Policy> {
-//        PolicySet(components)
-//    }
 }
 
 
@@ -196,7 +184,7 @@ extension PolicyBuilder {
     }
     
     @inlinable
-    public static func buildFinalResult(_ component: AnyPolicy) -> AnyPolicy {
+    public static func buildFinalResult(_ component: PolicySet<AnyPolicy>) -> AnyPolicy {
         func unwrapExistentialAndCache(policy: some VerifierPolicy) -> some VerifierPolicy {
             CachedVerifyingCriticalExtensions(wrapped: policy)
         }

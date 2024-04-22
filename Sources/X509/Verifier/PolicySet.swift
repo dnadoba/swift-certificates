@@ -18,7 +18,7 @@ import SwiftASN1
 public struct PolicySet<each Policy: VerifierPolicy>: VerifierPolicy {
     @usableFromInline
     var policy: (repeat each Policy)
-    
+
     @usableFromInline
     var _verifyingCriticalExtensions: [ASN1ObjectIdentifier]
     
@@ -28,8 +28,8 @@ public struct PolicySet<each Policy: VerifierPolicy>: VerifierPolicy {
     }
     
     @inlinable
-    public init(_ policy: (repeat each Policy)) {
-        self.policy = policy
+    public init(_ policy: repeat each Policy) {
+        self.policy = (repeat each policy)
 
         var extensions: [ASN1ObjectIdentifier] = []
         var totalExtensionCount = 0
@@ -52,11 +52,11 @@ public struct PolicySet<each Policy: VerifierPolicy>: VerifierPolicy {
             try await policy.chainMeetsPolicyRequirementsOrThrow(chain: chain)
             return policy
         }
-        
+
         do {
             var policy: (repeat each Policy) = self.policy
+            defer { self.policy = policy }
             policy = try await (repeat chainMeetsPolicyRequirementsOrThrow(policy: each policy))
-            self.policy = policy
             return .meetsPolicy
         } catch {
             return .failsToMeetPolicy(reason: (error as! VerifierError).reason)
